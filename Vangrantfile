@@ -1,0 +1,25 @@
+Vagrant.configure("2") do |config|
+
+  config.vm.define "master" do |node|
+    node.vm.box = "ubuntu/bionic64"
+    node.vm.hostname = "master"
+    node.vm.network "private_network", ip: "192.168.10.10"
+    node.vm.provision "docker"
+    node.vm.provision "shell", inline: <<-SHELL
+      docker swarm init --advertise-addr 192.168.10.10
+    SHELL
+  end
+
+  ["node01", "node02", "node03"].each do |name|
+    config.vm.define name do |node|
+      node.vm.box = "ubuntu/bionic64"
+      node.vm.hostname = name
+      node.vm.network "private_network", ip: "192.168.10.#{name.split("e")[1]}"
+      node.vm.provision "docker"
+      node.vm.provision "shell", inline: <<-SHELL
+        docker swarm join --token <SWMTKN-1-2wxicpyrvdxb7iz6izp74jn9ouz7kx4a8iio5orlgqdxspc0sc-7pmud0pvbkwp362jo8tnv8pwd> 192.168.10.10:2377
+      SHELL
+    end
+  end
+
+end
